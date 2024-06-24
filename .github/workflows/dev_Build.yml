@@ -31,7 +31,7 @@ jobs:
       - name: Run tests
         id: run-tests
         run: |
-          python tests/test-hello.py
+          python tests/test_hello.py
 
   notify:
     name: Discord Notification
