@@ -41,10 +41,14 @@ jobs:
 
     steps:
       - name: Send Discord notification
-        uses: discord-actions/message@v2
+        uses: rjstone/discord-webhook-notify@v1.0.4
         with:
-          webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          message: "Tests have failed for commit `${{ github.sha }}` on branch `${{ github.ref }}`. Please check the DEV logs."
+            severity: warn
+            color: '#FF3000'
+            details: "##  > - Test Cancelled, Please check the logs **"
+            footer:  "Test Cancelled!"
+            webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
 
   build-and-push:
     name: Containerizations
@@ -70,4 +74,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/flask-batot:latest
+          tags: ${{ secrets.DOCKER_USERNAME }}/flask-batot:${{github.sha}}
