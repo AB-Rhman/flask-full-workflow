@@ -1,0 +1,77 @@
+name: DEV - Build and Testing
+
+on:
+  push:
+    branches:
+      - dev
+      - deploy
+      - main
+  workflow_dispatch: 
+  pull_request: 
+    branches: 
+      - main  
+
+jobs:
+  test:
+    name: Testing Code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+            python-version: '3.10' 
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        id: run-tests
+        run: |
+          python tests/test_hello.py
+
+  notify:
+    name: Discord Notification
+    runs-on: ubuntu-latest
+    needs: test
+    if: failure()
+
+    steps:
+      - name: Send Discord notification
+        uses: rjstone/discord-webhook-notify@v1.0.4
+        with:
+            severity: warn
+            color: '#FF3000'
+            details: "##  > - Test Cancelled, Please check the logs **"
+            footer:  "Test Cancelled!"
+            webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+
+  build-and-push:
+    name: Containerizations
+    runs-on: ubuntu-latest
+    needs: test
+    if: success()
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/flask-batot:${{github.sha}}
