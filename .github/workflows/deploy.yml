@@ -15,7 +15,7 @@ jobs:
   Deploy-To-EKS:
     runs-on: ubuntu-latest
     outputs:
-      ingress_ip: ${{ steps.ingress.outputs }}
+      ingress_ip: ${{ steps.ingress.outputs.INGRESS_IP}}
 
     steps:
         - name: Checkout code
