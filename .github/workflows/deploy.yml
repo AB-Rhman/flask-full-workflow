@@ -63,10 +63,6 @@ jobs:
             INGRESS-IP:  ${{ env.INGRESS_IP }}
             IMAGE: ${{ secrets.DOCKER_USERNAME }}/flask-batot:${{github.sha}}
 
-        - name: Check the Manifest file content
-          run: |
-            cat test-k8s.yml
-
         - name: Deploy to Dev Env
           run: |
             kubectl apply -f kubernetes/.
