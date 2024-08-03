@@ -1,0 +1,136 @@
+name: Get EKS UP
+
+on: 
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+
+    steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Install kubectl CLI
+          uses: azure/setup-kubectl@v3
+          with:
+              version: 'v1.30.0'
+
+        - name: Setup Terraform
+          uses: hashicorp/setup-terraform@v3
+          with:
+              cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+        - name: Install AWS cli
+          id: install-aws-cli
+          uses: unfor19/install-aws-cli-action@master
+          with:
+            version: '2.17.15'
+
+        - name: Configure AWS credentials
+          uses: aws-actions/configure-aws-credentials@v4
+          with:
+            aws-region: us-east-1
+            aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+        - name: Provision the infrastructure (init)
+          working-directory: terraform
+          run: |
+            terraform init
+
+        - name: Provision the infrastructure (plan)
+          working-directory: terraform
+          run: |
+            terraform plan
+
+        - name: Provision the infrastructure (apply)
+          working-directory: terraform
+          run: |
+            terraform apply -auto-approve
+
+        - name: Create a KUBECONFIG
+          run: |
+            aws eks update-kubeconfig --region us-east-1 --name demo-eks
+
+        - name: Capture Terraform Output
+          working-directory: terraform
+          id: output
+          run: |
+            echo "Retrieving NodeInstanceRole..."
+            NodeInstanceRole=$(terraform output -raw NodeInstanceRole)
+            echo "NodeInstanceRole=$NodeInstanceRole" >> $GITHUB_ENV
+
+        - name: Download the node authentication ConfigMap
+          working-directory: terraform
+          run: |
+            curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/cloudformation/2020-10-29/aws-auth-cm.yaml
+
+        - name: Replace Part of the File
+          working-directory: terraform
+          run: |
+             sed -i "s|<ARN of instance role (not instance profile)>|${{ env.NodeInstanceRole }}|g"  aws-auth-cm.yaml
+
+        - name: Apply the edited ConfigMap to join the nodes
+          working-directory: terraform
+          run: |
+            kubectl apply -f aws-auth-cm.yaml
+
+        - name: Check node status
+          run: |
+            sleep 100
+
+  Install-Ingress:
+    needs: setup
+    runs-on: ubuntu-latest
+
+    steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Install kubectl CLI
+          uses: azure/setup-kubectl@v3
+          with:
+            version: 'v1.30.0'
+
+        - name: Install AWS cli
+          id: install-aws-cli
+          uses: unfor19/install-aws-cli-action@master
+          with:
+            version: '2.17.13'
+
+        - name: Configure AWS credentials
+          uses: aws-actions/configure-aws-credentials@v4
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: us-east-1
+
+        - name: Create a KUBECONFIG
+          run: |
+            aws eks update-kubeconfig --region us-east-1 --name demo-eks
+
+        - name: Install NLB
+          run: |
+            kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.1/deploy/static/provider/aws/deploy.yaml
+
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: Install-Ingress
+
+    steps:
+      - name: Infrastructure UP
+        uses: rjstone/discord-webhook-notify@v1.0.4
+        with:
+          severity: info
+          color: '#2A9824'
+          details: "##  > - **Infrastructure is UP and Running : ) **"
+          
+          footer:  "You can now use EKS"
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
+    
+        
+
+        
+          
