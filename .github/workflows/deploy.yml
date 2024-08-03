@@ -15,7 +15,7 @@ jobs:
   Deploy-To-EKS:
     runs-on: ubuntu-latest
     outputs:
-      ingress-ip: ${{ steps.ingress.outputs }}
+      ingress_ip: ${{ steps.ingress.outputs }}
 
     steps:
         - name: Checkout code
@@ -45,12 +45,12 @@ jobs:
 
         - name: Get Ingress IP
           run: |
-            INGRESS-IP=$(kubectl get service ingress-nginx-controller --namespace=ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-            echo "INGRESS-IP=$INGRESS-IP" >> $GITHUB_ENV
+            INGRESS_IP=$(kubectl get service ingress-nginx-controller --namespace=ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            echo "INGRESS_IP=$INGRESS_IP" >> $GITHUB_ENV
 
         - name: Share Ingress IP
           id: ingress
-          run: echo "INGRESS-IP=${{ env.INGRESS-IP }}" >> "$GITHUB_OUTPUT"
+          run: echo "INGRESS_IP=${{ env.INGRESS_IP }}" >> "$GITHUB_OUTPUT"
 
 
         - name: Replace Token in Manifest file
@@ -60,7 +60,7 @@ jobs:
             tokenSuffix: '_}_'
             files: '["kubernetes/*.*"]'
           env:
-            INGRESS-IP:  ${{ env.INGRESS-IP }}
+            INGRESS-IP:  ${{ env.INGRESS_IP }}
             IMAGE: ${{ secrets.DOCKER_USERNAME }}/flask-batot:${{github.sha}}
 
         - name: Check the Manifest file content
@@ -79,12 +79,12 @@ jobs:
     steps:
       - name: Deployment is DONE
         env:
-          ingress-ip: ${{ needs.Deploy-To-EKS.outputs.ingress-ip }}
+          ingress_ip: ${{ needs.Deploy-To-EKS.outputs.ingress_ip }}
         uses: rjstone/discord-webhook-notify@v1.0.4
         with:
           severity: info
           color: '#464AD4'
-          details: "###  > - **Deployment of Flask APP to EKS is DONE and Here is the url of it : ** http://${{env.ingress-ip}}"
+          details: "###  > - **Deployment of Flask APP to EKS is DONE and Here is the url of it : ** http://${{env.ingress_ip}}"
           
           footer:  "BATOT is UP"
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
