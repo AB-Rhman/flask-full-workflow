@@ -1,0 +1,37 @@
+name: Destroy All Infrastructure
+
+on: 
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+
+    steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Setup Terraform
+          uses: hashicorp/setup-terraform@v3
+          with:
+            cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+        - name: Terraform Init
+          working-directory: terraform
+          run: terraform init
+
+        - name: Terraform Apply
+          working-directory: terraform
+          run: terraform destroy -auto-approve
+
+        - name: Infrastructure Down
+          uses: rjstone/discord-webhook-notify@v1.0.4
+          with:
+            severity: warn
+            color: '#FF3000'
+            details: "##  > - **Infrastructure is DOWN : ( **"
+            
+            footer:  "*^*^*^*^*^*"
+            webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+        
