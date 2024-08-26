@@ -1,0 +1,47 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: flask-app-rules
+  namespace: monitoring
+  labels:
+    app: prometheus
+    resource: prometheus
+spec:
+  groups:
+  - name: flask-app.rules
+    rules:
+    - alert: HighCPUUsage
+      expr: rate(container_cpu_usage_seconds_total{namespace="default",pod=~"flask-app.*"}[5m]) > 0.8
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High CPU usage detected on Flask app"
+        description: "CPU usage is above 80% for more than 2 minutes."
+
+    - alert: HighResponseTime
+      expr: histogram_quantile(0.9, rate(flask_http_request_duration_seconds_bucket{job="flask-api"}[5m])) > 0.5
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "High response time detected"
+        description: "90th percentile of response times is above 500ms for more than 2 minutes."
+
+    - alert: FlaskAppDown
+      expr: absent(up{job="flask-api"} == 1)
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Flask application is down"
+        description: "The Flask application has been unresponsive for more than 5 minutes."
+
+    # - alert: TestAlert
+    #   expr: vector(1)
+    #   for: 1m
+    #   labels:
+    #     severity: critical
+    #   annotations:
+    #     summary: "This is a test alert"
+    #     description: "This alert is triggered to test the alerting system."
