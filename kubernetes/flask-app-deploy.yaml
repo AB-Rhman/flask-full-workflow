@@ -11,12 +11,19 @@ spec:
     metadata:
       labels:
         app: flask-app
+      annotations:
+        promtail.io/scrape: "true"
     spec:
       containers:
         - name: flask-app
           image: _{_IMAGE_}_
           ports:
             - containerPort: 5000
+          env:
+          - name: FLASK_ENV
+            value: production
+          - name: PYTHONUNBUFFERED
+            value: "1" # Ensures logs are output immediately
           resources:
             limits:
               cpu: "500m" # This limits the container to 50% of a CPU core
