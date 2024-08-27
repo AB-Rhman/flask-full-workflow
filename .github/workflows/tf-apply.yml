@@ -1,4 +1,4 @@
-name: Get EKS UP
+name: GET Infrastructure UP
 
 on: 
   workflow_dispatch:
@@ -114,6 +114,56 @@ jobs:
           run: |
             kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.1/deploy/static/provider/aws/deploy.yaml
 
+  Monitoring-Stack-Install:
+    needs: setup
+    runs-on: ubuntu-latest
+
+    steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Install kubectl CLI
+          uses: azure/setup-kubectl@v3
+          with:
+            version: 'v1.30.0'
+
+        - name: Install AWS cli
+          id: install-aws-cli
+          uses: unfor19/install-aws-cli-action@master
+          with:
+            version: '2.17.13'
+
+        - name: Configure AWS credentials
+          uses: aws-actions/configure-aws-credentials@v4
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: us-east-1
+
+        - name: Install Helm
+          run: |
+            curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+            chmod 700 get_helm.sh
+            ./get_helm.sh
+
+        - name: Create a KUBECONFIG
+          run: |
+            aws eks update-kubeconfig --region us-east-1 --name demo-eks
+
+        - name: Add Prometheus-community charts
+          run: |
+            helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+            helm repo update
+
+        - name: Install kube-prometheus-stack By helm chart
+          run: |
+            kubectl create namespace monitoring
+            helm install prometheus prometheus-community/kube-prometheus-stack --namespace monitoring
+        
+        - name: Install loki-stack By helm chart
+          run: |
+            helm repo add grafana https://grafana.github.io/helm-charts
+            helm install loki grafana/loki-stack --namespace monitoring
 
   notify:
     runs-on: ubuntu-latest
