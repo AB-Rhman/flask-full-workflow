@@ -1,7 +1,7 @@
 
 # Flask Full Workflow
 
-This project showcases how to apply essential DevOps practices to turn a simple "Hello World" Flask web application into a live production-ready state. It demonstrates the use of CI/CD pipelines for both code and infrastructure deployment using GitHub Actions.
+This project showcases how to apply essential DevOps practices to turn a simple Flask web application into a live production-ready state. It demonstrates the use of CI/CD pipelines for both code and infrastructure deployment using GitHub Actions.
 
 ## Project Overview
 
