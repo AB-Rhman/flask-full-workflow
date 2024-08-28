@@ -5,7 +5,7 @@ This project showcases how to apply essential DevOps practices to turn a simple 
 
 ## Project Overview
 
-![Workflow](images\workflow.jpg)
+![Workflow](images/workflow.jpg)
 
 The primary goal of this project is to automate the deployment and management of a Flask application on an AWS EKS cluster using best practices. The project is divided into two main components:
 
@@ -89,9 +89,9 @@ Additionally, ensure you have the following environment variables configured in 
 
    - Some dashboards form Grafana
 
-   ![Node](images\node.png)
+   ![Node](images/node.png)
 
-   ![Kubelet](images\kubelet.png)
+   ![Kubelet](images/kubelet.png)
 
 
 4. **Deploy Your Application:**
