@@ -167,7 +167,7 @@ jobs:
 
   notify:
     runs-on: ubuntu-latest
-    needs: Install-Ingress
+    needs: [Install-Ingress, Monitoring-Stack-Install]
 
     steps:
       - name: Infrastructure UP
